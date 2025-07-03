@@ -14,14 +14,16 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface LoanTransactionRepository extends JpaRepository<LoanTransaction, Long> {
-    
+public interface LoanTransactionRepository extends JpaRepository<LoanTransaction, String> {
+
+    Optional<LoanTransaction> findByTransactionId(String transactionId);
+
     Optional<LoanTransaction> findByTransactionUniqueNo(String transactionUniqueNo);
-    
+
     List<LoanTransaction> findByLoanContract(LoanContract loanContract);
-    
+
     Page<LoanTransaction> findByLoanContract(LoanContract loanContract, Pageable pageable);
-    
+
     @Query("SELECT lt FROM LoanTransaction lt WHERE lt.loanContract.loanAccountNum = :loanAccountNum " +
            "AND lt.transactionDate >= :fromDate AND lt.transactionDate <= :toDate " +
            "ORDER BY lt.transactionDate DESC")
@@ -29,7 +31,7 @@ public interface LoanTransactionRepository extends JpaRepository<LoanTransaction
             @Param("loanAccountNum") String loanAccountNum,
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate);
-    
+
     @Query("SELECT lt FROM LoanTransaction lt WHERE lt.loanContract.loanAccountNum = :loanAccountNum " +
            "AND lt.transactionDate >= :fromDate AND lt.transactionDate <= :toDate " +
            "ORDER BY lt.transactionDate DESC")
@@ -38,4 +40,4 @@ public interface LoanTransactionRepository extends JpaRepository<LoanTransaction
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate,
             Pageable pageable);
-} 
+}

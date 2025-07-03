@@ -1,5 +1,6 @@
 package com.hyundai_capital.openbanking.service;
 
+import com.hyundai_capital.openbanking.dto.loan.LoanContractDTO;
 import com.hyundai_capital.openbanking.dto.loan.LoanTransactionInquiryRequest;
 import com.hyundai_capital.openbanking.dto.loan.LoanTransactionInquiryResponse;
 import com.hyundai_capital.openbanking.entity.LoanContract;
@@ -24,36 +25,36 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 public class LoanService {
-    
+
     private final LoanContractRepository loanContractRepository;
     private final LoanTransactionRepository loanTransactionRepository;
-    
+
     @Transactional(readOnly = true)
     public LoanTransactionInquiryResponse getLoanTransactions(LoanTransactionInquiryRequest request) {
         // 대출계좌 조회
         LoanContract loanContract = loanContractRepository.findByLoanAccountNum(request.getLoanAccountNum())
                 .orElseThrow(() -> new RuntimeException("대출계좌를 찾을 수 없습니다."));
-        
+
         // 날짜 범위 설정
         LocalDateTime startDate = parseDate(request.getInquiryStartDate());
         LocalDateTime endDate = parseDate(request.getInquiryEndDate()).plusDays(1); // 종료일 포함
-        
+
         // 거래내역 조회
         List<LoanTransaction> transactions = loanTransactionRepository
                 .findByLoanAccountNumAndDateRange(request.getLoanAccountNum(), startDate, endDate);
-        
+
         // 정렬
         if ("A".equals(request.getSortOrder())) {
             transactions.sort((t1, t2) -> t1.getTransactionDate().compareTo(t2.getTransactionDate()));
         } else {
             transactions.sort((t1, t2) -> t2.getTransactionDate().compareTo(t1.getTransactionDate()));
         }
-        
+
         // DTO 변환
         List<LoanTransactionInquiryResponse.LoanTransactionDetail> tranList = transactions.stream()
                 .map(this::convertToTransactionDetail)
                 .collect(Collectors.toList());
-        
+
         return LoanTransactionInquiryResponse.builder()
                 .loanAccountNum(loanContract.getLoanAccountNum())
                 .loanProdName(loanContract.getLoanProductName())
@@ -61,44 +62,58 @@ public class LoanService {
                 .tranList(tranList)
                 .build();
     }
-    
+
     public LoanContract createLoanContract(User user, String productName, BigDecimal amount, 
                                           BigDecimal interestRate, LocalDate maturityDate, Integer repaymentDay,
                                           LoanContract.LoanType loanType) {
         String loanAccountNum = generateLoanAccountNumber();
-        
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         LoanContract loanContract = LoanContract.builder()
                 .loanAccountNum(loanAccountNum)
                 .loanProductName(productName)
                 .loanAmount(amount)
                 .remainingAmount(amount)
                 .interestRate(interestRate)
-                .contractDate(LocalDate.now())
-                .maturityDate(maturityDate)
+                .contractDate(LocalDate.now().format(formatter))
+                .maturityDate(maturityDate.format(formatter))
                 .repaymentDay(repaymentDay)
                 .loanType(loanType)
-                .status(LoanContract.LoanStatus.ACTIVE)
+                .loanStatus(LoanContract.LoanStatus.ACTIVE)
                 .user(user)
                 .build();
-        
+
         return loanContractRepository.save(loanContract);
     }
-    
+
     @Transactional(readOnly = true)
     public List<LoanContract> getUserLoanContracts(String userCi) {
         return loanContractRepository.findActiveLoansByUserCi(userCi);
     }
-    
+
+    @Transactional(readOnly = true)
+    public List<LoanContract> getUserLoanContractsByUserSeqNo(String userSeqNo) {
+        return loanContractRepository.findActiveLoansByUserSeqNo(userSeqNo);
+    }
+
+    @Transactional(readOnly = true)
+    public List<LoanContractDTO> getUserLoanDTOsByUserSeqNo(String userSeqNo) {
+        List<LoanContract> contracts = loanContractRepository.findActiveLoansByUserSeqNo(userSeqNo);
+        return contracts.stream()
+                .map(LoanContractDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
     private LocalDateTime parseDate(String dateStr) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         LocalDate date = LocalDate.parse(dateStr, formatter);
         return date.atStartOfDay();
     }
-    
+
     private LoanTransactionInquiryResponse.LoanTransactionDetail convertToTransactionDetail(LoanTransaction transaction) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyyMMdd");
         DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern("HHmmss");
-        
+
         return LoanTransactionInquiryResponse.LoanTransactionDetail.builder()
                 .tranDate(transaction.getTransactionDate().format(dateFormatter))
                 .tranTime(transaction.getTransactionDate().format(timeFormatter))
@@ -111,7 +126,7 @@ public class LoanService {
                 .tranUniqueNo(transaction.getTransactionUniqueNo())
                 .build();
     }
-    
+
     private String getTransactionTypeCode(LoanTransaction.TransactionType type) {
         switch (type) {
             case LOAN_EXECUTION: return "1";
@@ -123,7 +138,7 @@ public class LoanService {
             default: return "0";
         }
     }
-    
+
     private String getTransactionTypeName(LoanTransaction.TransactionType type) {
         switch (type) {
             case LOAN_EXECUTION: return "대출실행";
@@ -135,7 +150,7 @@ public class LoanService {
             default: return "기타";
         }
     }
-    
+
     private String generateLoanAccountNumber() {
         return "HC" + System.currentTimeMillis();
     }
