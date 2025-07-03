@@ -1,0 +1,110 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 공통 스타일 */
+.main-section {
+  @apply bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 min-h-[75vh];
+}
+
+.header-nav {
+  @apply text-white;
+}
+
+.nav-link {
+  @apply text-white hover:text-blue-200 font-medium;
+}
+
+.nav-link-right {
+  @apply text-white/80 hover:text-white;
+}
+
+/* 메인 콘텐츠 섹션 스타일 */
+.loan-section {
+  @apply text-left text-white cursor-pointer transition-all duration-300 h-full flex flex-col justify-between py-6 px-8;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.loan-section:last-child {
+  border-right: none;
+}
+
+.loan-section.dimmed {
+  @apply opacity-40;
+}
+
+.loan-section.active {
+  @apply opacity-100;
+}
+
+.loan-title {
+  @apply text-2xl font-bold mb-3;
+}
+
+.loan-description {
+  @apply text-lg mb-4 opacity-90;
+}
+
+.loan-buttons {
+  @apply flex gap-3 mt-auto pt-4;
+}
+
+/* 커스텀 버튼 스타일 */
+.loan-button {
+  @apply px-6 py-2 rounded-full font-medium transition-all duration-300 cursor-pointer flex items-center justify-center gap-6;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.loan-button:hover {
+  @apply bg-white;
+  border: 1px solid white;
+}
+
+.loan-button:active {
+  @apply transform scale-95;
+}
+
+/* 버튼 내 텍스트 스타일 */
+.button-text {
+  @apply text-white transition-colors duration-300 cursor-pointer;
+}
+
+.loan-button:hover .button-text {
+  @apply text-gray-600;
+}
+
+.button-text:hover {
+  color: #2563eb !important;
+}
+
+/* 서비스 카드 스타일 */
+.service-card {
+  @apply relative overflow-hidden rounded-lg cursor-pointer transition-transform duration-300 bg-white;
+}
+
+.service-card:hover {
+  @apply transform scale-105;
+}
+
+.service-card-image-container {
+  @apply relative h-32 overflow-hidden;
+}
+
+.service-card-image {
+  @apply w-full h-full object-cover;
+}
+
+.service-card-title-overlay {
+  @apply absolute top-4 left-4 text-white text-lg font-bold z-10;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.service-card-content {
+  @apply p-4 bg-white;
+}
+
+.service-card-description {
+  @apply text-gray-700 text-sm leading-relaxed;
+}
