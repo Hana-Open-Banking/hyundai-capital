@@ -70,6 +70,13 @@ public class User {
     @Builder.Default
     private List<AccessToken> accessTokens = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<ApiResponseLog> apiResponseLogs = new ArrayList<>();
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private LoanInquiryContext loanInquiryContext;
+
     public enum UserStatus {
         ACTIVE, INACTIVE, SUSPENDED
     }

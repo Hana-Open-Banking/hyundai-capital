@@ -30,10 +30,10 @@ public class LoanContract {
     @Column(name = "loan_product_name", nullable = false, length = 100)
     private String loanProductName;  // 대출상품명
 
-    @Column(name = "loan_amount", nullable = false, precision = 15, scale = 2)
+    @Column(name = "loan_amount", nullable = false, precision = 15, scale = 0)
     private BigDecimal loanAmount;  // 대출금액
 
-    @Column(name = "remaining_amount", nullable = false, precision = 15, scale = 2)
+    @Column(name = "remaining_amount", nullable = false, precision = 15, scale = 0)
     private BigDecimal remainingAmount;  // 잔액
 
     @Column(name = "interest_rate", nullable = false, precision = 5, scale = 2)
@@ -64,6 +64,13 @@ public class LoanContract {
     @OneToMany(mappedBy = "loanContract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<LoanTransaction> transactions = new ArrayList<>();
+
+    @OneToOne(mappedBy = "loanContract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private LoanRepaymentInfo loanRepaymentInfo;
+
+    @OneToMany(mappedBy = "loanContract", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<AccountInfo> accountInfos = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at")

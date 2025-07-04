@@ -26,10 +26,10 @@ public class LoanTransaction {
     @Column(name = "transaction_date", nullable = false)
     private LocalDateTime transactionDate;  // 거래일시
 
-    @Column(name = "transaction_amount", nullable = false, precision = 15, scale = 2)
+    @Column(name = "transaction_amount", nullable = false, precision = 15, scale = 0)
     private BigDecimal transactionAmount;  // 거래금액
 
-    @Column(name = "after_balance", nullable = false, precision = 15, scale = 2)
+    @Column(name = "after_balance", nullable = false, precision = 15, scale = 0)
     private BigDecimal afterBalance;  // 거래후잔액
 
     @Enumerated(EnumType.STRING)
@@ -49,6 +49,18 @@ public class LoanTransaction {
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;  // 생성일시
+
+    @Column(name = "trans_date", length = 8)
+    private String transDate;  // 거래일자
+
+    @Column(name = "trans_time", length = 6)
+    private String transTime;  // 거래시간
+
+    @Column(name = "trans_type", length = 3)
+    private String transType;  // 거래유형
+
+    @Column(name = "trans_amt", precision = 13, scale = 0)
+    private BigDecimal transAmt;  // 거래금액 (단순화)
 
     public enum TransactionType {
         LOAN_EXECUTION,     // 대출실행
