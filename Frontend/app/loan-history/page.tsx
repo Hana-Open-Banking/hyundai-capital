@@ -241,7 +241,7 @@ export default function LoanHistoryPage() {
             <div className="flex items-center space-x-8">
               <Link href="/" className="flex items-center">
                 <Image
-                  src="/hyundai-capital-logo-blue.png"
+                  src="/images/hyundai-capital-logo-blue.png"
                   alt="Hyundai Capital"
                   width={120}
                   height={24}
@@ -330,7 +330,7 @@ export default function LoanHistoryPage() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Page Title */}
         <h1 className="text-3xl font-bold text-gray-900 mb-8 text-center">상품 이용내역</h1>
 

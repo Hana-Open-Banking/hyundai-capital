@@ -55,7 +55,7 @@ export default function LoginPage() {
             <div className="flex items-center space-x-8">
               <Link href="/" className="flex items-center">
                 <Image
-                  src="/hyundai-capital-logo.png"
+                  src="/images/hyundai-capital-logo-white.png"
                   alt="Hyundai Capital"
                   width={120}
                   height={24}

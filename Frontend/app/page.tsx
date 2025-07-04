@@ -75,7 +75,11 @@ export default function HyundaiCapitalClone() {
               <div className="flex items-center space-x-8">
                 <Link href="/" className="flex items-center">
                   <Image
-                    src={isHeaderHovered ? "/hyundai-capital-logo-blue.png" : "/hyundai-capital-logo.png"}
+                    src={
+                      isHeaderHovered
+                        ? "/images/hyundai-capital-logo-blue.png"
+                        : "/images/hyundai-capital-logo-white.png"
+                    }
                     alt="Hyundai Capital"
                     width={120}
                     height={24}
@@ -208,7 +212,7 @@ export default function HyundaiCapitalClone() {
                   <div>
                     <h3 className="font-bold text-gray-900 mb-4 text-base">상품 이용내역</h3>
                     <ul className="space-y-2">
-                    <li>
+                      <li>
                         <Link href="#" className="text-sm text-gray-600 hover:text-blue-600 transition-colors block">
                           이용명세서
                         </Link>
