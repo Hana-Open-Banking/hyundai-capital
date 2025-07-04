@@ -65,7 +65,6 @@ public class UserService {
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByUserSeqNo(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-
         if (!user.getPassword().equals(hashPassword(request.getPassword()))) {
             throw new RuntimeException("비밀번호가 올바르지 않습니다.");
         }
@@ -121,7 +120,6 @@ public class UserService {
     public AuthLoginResponse loginByEmail(AuthLoginRequest request) {
         User user = userRepository.findByUserEmail(request.getUserEmail())
                 .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
-
         if (!user.getPassword().equals(hashPassword(request.getPassword()))) {
             throw new RuntimeException("비밀번호가 올바르지 않습니다.");
         }

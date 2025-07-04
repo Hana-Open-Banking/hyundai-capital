@@ -1,13 +1,13 @@
 package com.hyundai_capital.openbanking.service;
 
 import com.hyundai_capital.openbanking.dto.loan.LoanContractDTO;
+import com.hyundai_capital.openbanking.dto.loan.LoanDetailDTO;
 import com.hyundai_capital.openbanking.dto.loan.LoanTransactionInquiryRequest;
 import com.hyundai_capital.openbanking.dto.loan.LoanTransactionInquiryResponse;
-import com.hyundai_capital.openbanking.entity.LoanContract;
-import com.hyundai_capital.openbanking.entity.LoanTransaction;
-import com.hyundai_capital.openbanking.entity.User;
-import com.hyundai_capital.openbanking.repository.LoanContractRepository;
-import com.hyundai_capital.openbanking.repository.LoanTransactionRepository;
+import com.hyundai_capital.openbanking.entity.*;
+import com.hyundai_capital.openbanking.repository.*;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,6 +28,8 @@ public class LoanService {
 
     private final LoanContractRepository loanContractRepository;
     private final LoanTransactionRepository loanTransactionRepository;
+    private final LoanRepaymentInfoRepository loanRepaymentInfoRepository;
+    private final AccountInfoRepository accountInfoRepository;
 
     @Transactional(readOnly = true)
     public LoanTransactionInquiryResponse getLoanTransactions(LoanTransactionInquiryRequest request) {
@@ -153,5 +155,32 @@ public class LoanService {
 
     private String generateLoanAccountNumber() {
         return "HC" + System.currentTimeMillis();
+    }
+
+    /**
+     * 대출 상세 정보 조회
+     * @param loanId 대출 ID
+     * @return 대출 상세 정보 DTO
+     */
+    @Transactional(readOnly = true)
+    public LoanDetailDTO getLoanDetail(String loanId) {
+        // 대출 계약 조회
+        LoanContract loanContract = loanContractRepository.findByLoanId(loanId)
+                .orElseThrow(() -> new RuntimeException("대출 계약을 찾을 수 없습니다."));
+
+        // 상환 정보 조회
+        LoanRepaymentInfo repaymentInfo = loanRepaymentInfoRepository.findByLoanId(loanId).orElse(null);
+
+        // 계좌 정보 조회
+        List<AccountInfo> accountInfos = accountInfoRepository.findByIdLoanId(loanId);
+
+        // 최근 거래 내역 조회 (최대 5건)
+        List<LoanTransaction> recentTransactions = loanTransactionRepository.findByLoanContract(
+                loanContract, 
+                PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "transactionDate"))
+        ).getContent();
+
+        // DTO 변환 및 반환
+        return LoanDetailDTO.fromEntity(loanContract, repaymentInfo, accountInfos, recentTransactions);
     }
 } 
