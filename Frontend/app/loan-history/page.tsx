@@ -46,6 +46,43 @@ interface LoanData {
   }>;
 }
 
+interface LoanDetailData {
+  loan_id: string;
+  loan_account_num: string;
+  loan_product_name: string;
+  loan_amount: number;
+  remaining_amount: number;
+  interest_rate: number;
+  contract_date: string;
+  maturity_date: string;
+  repayment_day: number;
+  loan_status: string;
+  loan_type: string;
+  user_seq_no: string;
+  user_name: string;
+  repayment_info: {
+    repay_date: string;
+    repay_method: string;
+    repay_org_code: string;
+    repay_account_num: string;
+    repay_account_num_masked: string;
+    next_repay_date: string;
+  };
+  account_info_list: Array<{
+    account_num: string;
+    account_seq: string;
+  }>;
+  recent_transactions: Array<{
+    transaction_id: string;
+    transaction_date: string;
+    transaction_time: string;
+    transaction_type: string;
+    transaction_amount: number;
+    after_balance: number;
+    transaction_summary: string;
+  }>;
+}
+
 export default function LoanHistoryPage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -56,6 +93,15 @@ export default function LoanHistoryPage() {
   const [loanDataList, setLoanDataList] = useState<LoanData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loanDetails, setLoanDetails] = useState<{
+    [key: string]: LoanDetailData | null;
+  }>({});
+  const [loadingDetails, setLoadingDetails] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [detailErrors, setDetailErrors] = useState<{
+    [key: string]: string | null;
+  }>({});
 
   useEffect(() => {
     // 로그인 상태 확인
@@ -126,6 +172,44 @@ export default function LoanHistoryPage() {
     fetchLoans();
   }, []);
 
+  const fetchLoanDetail = async (loanId: string) => {
+    try {
+      setLoadingDetails((prev) => ({ ...prev, [loanId]: true }));
+      setDetailErrors((prev) => ({ ...prev, [loanId]: null }));
+
+      const userSeqNo = sessionStorage.getItem("userSeqNo");
+      const accessToken = sessionStorage.getItem("accessToken");
+
+      if (!userSeqNo || !accessToken) {
+        throw new Error("로그인이 필요합니다");
+      }
+
+      const response = await axios({
+        method: "get",
+        url: `https://aef2-112-76-112-180.ngrok-free.app/api/hyundai-capital/loans/detail?user_seq_no=${userSeqNo}&loan_id=${loanId}`,
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+      });
+
+      console.log("Loan Detail Response:", response.data);
+      setLoanDetails((prev) => ({ ...prev, [loanId]: response.data }));
+    } catch (error: any) {
+      console.error("Loan Detail Error:", error);
+      setDetailErrors((prev) => ({
+        ...prev,
+        [loanId]:
+          error.response?.data?.message ||
+          "상세 정보를 불러오는데 실패했습니다",
+      }));
+    } finally {
+      setLoadingDetails((prev) => ({ ...prev, [loanId]: false }));
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("userData");
     sessionStorage.removeItem("accessToken");
@@ -142,12 +226,16 @@ export default function LoanHistoryPage() {
     setShowProductMenu(!showProductMenu);
   };
 
-  const toggleLoanDetails = (loanId: string) => {
+  const toggleLoanDetails = async (loanId: string) => {
     const newExpanded = new Set(expandedLoans);
     if (newExpanded.has(loanId)) {
       newExpanded.delete(loanId);
     } else {
       newExpanded.add(loanId);
+      // 상세 정보가 없는 경우에만 API 호출
+      if (!loanDetails[loanId]) {
+        await fetchLoanDetail(loanId);
+      }
     }
     setExpandedLoans(newExpanded);
   };
@@ -429,111 +517,80 @@ export default function LoanHistoryPage() {
                   {/* Expanded Details */}
                   {expandedLoans.has(loanData.loan_id) && (
                     <div className="border-t border-gray-200">
-                      {/* Repayment Info */}
-                      <div className="p-6 border-b border-gray-200">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">
-                          상환 정보
-                        </h3>
-                        <div className="grid md:grid-cols-3 gap-6">
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">상환일</p>
-                            <p className="text-base font-medium text-gray-900">
-                              매월 {loanData.repayment_day}일
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">
-                              다음 상환일
-                            </p>
-                            <p className="text-base font-medium text-gray-900">
-                              {formatDate(
-                                loanData.repayment_info.next_repay_date
-                              )}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-500 mb-1">
-                              상환계좌
-                            </p>
-                            <p className="text-base font-medium text-gray-900">
-                              {loanData.repayment_info.repay_account_num_masked}
-                            </p>
-                          </div>
+                      {loadingDetails[loanData.loan_id] ? (
+                        <div className="flex justify-center items-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
                         </div>
-                      </div>
-
-                      {/* Transaction History */}
-                      <div className="p-6">
-                        <h3 className="text-lg font-bold text-gray-900 mb-4">
-                          최근 거래내역
-                        </h3>
-                        <div className="overflow-x-auto">
-                          <table className="w-full">
-                            <thead>
-                              <tr className="border-b border-gray-200">
-                                <th className="text-left py-3 px-4 font-medium text-gray-700">
-                                  거래일시
-                                </th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-700">
-                                  거래구분
-                                </th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-700">
-                                  거래금액
-                                </th>
-                                <th className="text-right py-3 px-4 font-medium text-gray-700">
-                                  잔액
-                                </th>
-                                <th className="text-left py-3 px-4 font-medium text-gray-700">
-                                  거래내용
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {loanData.recent_transactions.map(
-                                (transaction) => (
-                                  <tr
-                                    key={transaction.transaction_id}
-                                    className="border-b border-gray-100 hover:bg-gray-50"
+                      ) : detailErrors[loanData.loan_id] ? (
+                        <div className="text-red-500 text-center py-4">
+                          {detailErrors[loanData.loan_id]}
+                        </div>
+                      ) : loanData && loanDetails[loanData.loan_id] ? (
+                        <table className="w-full">
+                          <thead>
+                            <tr className="border-b border-gray-200">
+                              <th className="text-left py-3 px-4 font-medium text-gray-700">
+                                거래일시
+                              </th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-700">
+                                거래구분
+                              </th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-700">
+                                거래금액
+                              </th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-700">
+                                잔액
+                              </th>
+                              <th className="text-left py-3 px-4 font-medium text-gray-700">
+                                거래내용
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {loanDetails[
+                              loanData.loan_id
+                            ]?.recent_transactions?.map((transaction) => (
+                              <tr
+                                key={transaction.transaction_id}
+                                className="border-b border-gray-100 hover:bg-gray-50"
+                              >
+                                <td className="py-3 px-4 text-sm text-gray-900">
+                                  {formatDate(transaction.transaction_date)}
+                                </td>
+                                <td className="py-3 px-4 text-sm text-gray-900">
+                                  {getTransactionTypeText(
+                                    transaction.transaction_type
+                                  )}
+                                </td>
+                                <td className="py-3 px-4 text-sm text-gray-900">
+                                  <span
+                                    className={
+                                      transaction.transaction_type ===
+                                      "LOAN_EXECUTION"
+                                        ? "text-blue-600"
+                                        : "text-red-600"
+                                    }
                                   >
-                                    <td className="py-3 px-4 text-sm text-gray-900">
-                                      {formatDate(transaction.transaction_date)}
-                                    </td>
-                                    <td className="py-3 px-4 text-sm text-gray-900">
-                                      {getTransactionTypeText(
-                                        transaction.transaction_type
-                                      )}
-                                    </td>
-                                    <td className="py-3 px-4 text-sm text-right font-medium">
-                                      <span
-                                        className={
-                                          transaction.transaction_type ===
-                                          "LOAN_EXECUTION"
-                                            ? "text-blue-600"
-                                            : "text-red-600"
-                                        }
-                                      >
-                                        {transaction.transaction_type ===
-                                        "LOAN_EXECUTION"
-                                          ? "+"
-                                          : "-"}
-                                        {formatAmount(
-                                          transaction.transaction_amount
-                                        )}
-                                      </span>
-                                    </td>
-                                    <td className="py-3 px-4 text-sm text-right text-gray-900">
-                                      {formatAmount(transaction.after_balance)}
-                                    </td>
-                                    <td className="py-3 px-4 text-sm text-gray-600">
-                                      {transaction.transaction_summary}
-                                    </td>
-                                  </tr>
-                                )
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
+                                    {transaction.transaction_type ===
+                                    "LOAN_EXECUTION"
+                                      ? "+"
+                                      : "-"}
+                                    {formatAmount(
+                                      transaction.transaction_amount
+                                    )}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-sm text-gray-900">
+                                  {formatAmount(transaction.after_balance)}
+                                </td>
+                                <td className="py-3 px-4 text-sm text-gray-600">
+                                  {transaction.transaction_summary}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      ) : null}
                     </div>
                   )}
                 </div>
