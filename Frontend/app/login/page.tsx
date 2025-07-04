@@ -1,49 +1,112 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { Search } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { useRouter } from "next/navigation"
+import { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/navigation";
+import axios from "axios"; // Added axios import
 
 export default function LoginPage() {
-  const [activeTab, setActiveTab] = useState("아이디")
+  const [activeTab, setActiveTab] = useState("아이디");
   const [formData, setFormData] = useState({
     username: "",
     password: "",
-  })
+  });
 
-  const router = useRouter()
+  const router = useRouter();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("로그인 시도:", formData)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-    // 로그인 성공 시 사용자 정보 저장
-    const userData = {
-      isLoggedIn: true,
-      userName: "김현대", // 임시 사용자 이름
-      userEmail: "kim.hyundai@example.com",
-      userId: formData.username || "user123",
+    try {
+      // 로그인 API 호출
+      const response = await axios.post(
+        "/api/auth/login",
+        {
+          userEmail: "kim@example.com",
+          password: "password123",
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+        }
+      );
+
+      console.log("Login response:", response.data);
+
+      if (!response.data || !response.data.accessToken) {
+        throw new Error("로그인 응답에 토큰이 없습니다.");
+      }
+
+      // 토큰과 userSeqNo 저장
+      const { accessToken, userSeqNo } = response.data;
+      sessionStorage.setItem("accessToken", accessToken);
+      sessionStorage.setItem("userSeqNo", userSeqNo);
+
+      console.log("✅ 토큰 저장 완료:", {
+        accessToken: sessionStorage.getItem("accessToken"),
+        userSeqNo: sessionStorage.getItem("userSeqNo"),
+      });
+
+      try {
+        // 사용자 정보 API 호출
+        const userResponse = await axios.get(
+          "https://aef2-112-76-112-180.ngrok-free.app/api/users/me",
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              "ngrok-skip-browser-warning": "true",
+            },
+          }
+        );
+
+        console.log("User data response:", userResponse.data);
+
+        // 사용자 정보 저장
+        if (userResponse.data) {
+          sessionStorage.setItem("userData", JSON.stringify(userResponse.data));
+          console.log("Saved user data:", userResponse.data);
+        }
+
+        console.log("로그인 성공! 홈으로 이동합니다...");
+        router.push("/");
+      } catch (userError) {
+        console.error("Failed to fetch user data:", userError);
+        // 사용자 정보 조회 실패해도 일단 홈으로 이동
+        router.push("/");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      if (axios.isAxiosError(error)) {
+        const errorMessage =
+          error.response?.data?.message || "로그인에 실패했습니다.";
+        console.error("Error details:", {
+          status: error.response?.status,
+          data: error.response?.data,
+        });
+        alert(errorMessage);
+      } else {
+        alert("로그인에 실패했습니다. 다시 시도해주세요.");
+      }
     }
-
-    localStorage.setItem("userData", JSON.stringify(userData))
-
-    // 홈으로 리다이렉트
-    router.push("/")
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600">
@@ -115,7 +178,9 @@ export default function LoginPage() {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`text-lg font-medium transition-all pb-2 ${
-                activeTab === tab ? "text-white border-b-2 border-white" : "text-white/70 hover:text-white"
+                activeTab === tab
+                  ? "text-white border-b-2 border-white"
+                  : "text-white/70 hover:text-white"
               }`}
             >
               {tab}
@@ -164,13 +229,22 @@ export default function LoginPage() {
 
           {/* Links */}
           <div className="flex justify-center space-x-6 mt-8 text-white/80 text-sm">
-            <Link href="#" className="hover:text-white transition-colors flex items-center">
+            <Link
+              href="#"
+              className="hover:text-white transition-colors flex items-center"
+            >
               아이디 찾기 <span className="ml-1">→</span>
             </Link>
-            <Link href="#" className="hover:text-white transition-colors flex items-center">
+            <Link
+              href="#"
+              className="hover:text-white transition-colors flex items-center"
+            >
               비밀번호 찾기 <span className="ml-1">→</span>
             </Link>
-            <Link href="#" className="hover:text-white transition-colors flex items-center">
+            <Link
+              href="#"
+              className="hover:text-white transition-colors flex items-center"
+            >
               회원가입 <span className="ml-1">→</span>
             </Link>
           </div>
@@ -187,5 +261,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
