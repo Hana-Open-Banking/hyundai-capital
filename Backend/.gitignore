@@ -147,3 +147,5 @@ performance-test-results/
 
 # 문서 생성 관련
 docs/generated/
+
+mysql-data/

@@ -11,16 +11,23 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface LoanContractRepository extends JpaRepository<LoanContract, Long> {
-    
+public interface LoanContractRepository extends JpaRepository<LoanContract, String> {
+
+    Optional<LoanContract> findByLoanId(String loanId);
+
     Optional<LoanContract> findByLoanAccountNum(String loanAccountNum);
-    
+
     List<LoanContract> findByUser(User user);
-    
-    List<LoanContract> findByUserUserId(String userId);
-    
-    @Query("SELECT lc FROM LoanContract lc WHERE lc.user.userCi = :userCi AND lc.status = 'ACTIVE'")
+
+    List<LoanContract> findByUserUserSeqNo(String userSeqNo);
+
+    @Query("SELECT lc FROM LoanContract lc WHERE lc.user.userSeqNo = :userSeqNo AND lc.loanStatus = 'ACTIVE'")
+    List<LoanContract> findActiveLoansByUserSeqNo(@Param("userSeqNo") String userSeqNo);
+
+    @Query("SELECT lc FROM LoanContract lc WHERE lc.user.userCi = :userCi AND lc.loanStatus = 'ACTIVE'")
     List<LoanContract> findActiveLoansByUserCi(@Param("userCi") String userCi);
-    
+
+    boolean existsByLoanId(String loanId);
+
     boolean existsByLoanAccountNum(String loanAccountNum);
-} 
+}
