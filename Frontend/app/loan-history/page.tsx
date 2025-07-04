@@ -8,9 +8,13 @@ import axios from "axios";
 
 interface UserData {
   isLoggedIn: boolean;
-  userName: string;
-  userEmail: string;
-  userId: string;
+  user_name: string;
+  user_email: string;
+  user_seq_no: string;
+  gender: string;
+  phone_number: string;
+  address: string;
+  created_at: string;
 }
 
 interface LoanData {
@@ -105,7 +109,7 @@ export default function LoanHistoryPage() {
 
   useEffect(() => {
     // 로그인 상태 확인
-    const savedUserData = localStorage.getItem("userData");
+    const savedUserData = sessionStorage.getItem("userData");
     if (savedUserData) {
       setUserData(JSON.parse(savedUserData));
     }
@@ -364,7 +368,7 @@ export default function LoanHistoryPage() {
                     onClick={toggleUserMenu}
                     className="text-gray-600 hover:text-blue-600 flex items-center space-x-1 transition-colors"
                   >
-                    <span>{userData.userName}님</span>
+                    <span>{userData.user_name}님</span>
                     <ChevronDown className="w-3 h-3" />
                   </button>
 
@@ -372,7 +376,7 @@ export default function LoanHistoryPage() {
                     <div className="absolute right-0 top-full mt-2 w-40 bg-white shadow-lg border border-gray-200 z-50">
                       <div className="px-3 py-2 border-b border-gray-200">
                         <p className="font-medium text-gray-900 text-sm">
-                          {userData.userName}님
+                          {userData.user_name}님
                         </p>
                       </div>
                       <div className="flex">
