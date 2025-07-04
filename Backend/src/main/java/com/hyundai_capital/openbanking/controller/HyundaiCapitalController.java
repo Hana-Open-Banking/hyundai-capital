@@ -1,6 +1,7 @@
 package com.hyundai_capital.openbanking.controller;
 
 import com.hyundai_capital.openbanking.dto.loan.LoanContractDTO;
+import com.hyundai_capital.openbanking.dto.loan.LoanDetailDTO;
 import com.hyundai_capital.openbanking.dto.user.LoginRequest;
 import com.hyundai_capital.openbanking.dto.user.LoginResponse;
 import com.hyundai_capital.openbanking.dto.user.UserRegistrationRequest;
@@ -172,5 +173,49 @@ public class HyundaiCapitalController {
         response.put("timestamp", LocalDate.now().toString());
 
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 대출 상세 조회 API
+     * 특정 대출의 상세 정보를 조회합니다. 액세스 토큰이 필요합니다.
+     * 
+     * @param authorization 인증 헤더 (Bearer 토큰)
+     * @param loanId 대출 ID
+     * @param userSeqNo 사용자 일련번호
+     * @return 대출 상세 정보
+     */
+    @GetMapping("/loans/detail")
+    public ResponseEntity<?> getLoanDetail(
+            @RequestHeader("Authorization") String authorization,
+            @RequestParam("loan_id") String loanId,
+            @RequestParam("user_seq_no") String userSeqNo) {
+
+        try {
+            log.info("대출 상세 조회 요청: 대출 ID={}, 사용자 일련번호={}", loanId, userSeqNo);
+
+            // 토큰 검증 (토큰이 유효하고 요청한 user_seq_no와 일치하는지 확인)
+            if (!isValidTokenForUser(authorization, userSeqNo)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            // 대출 상세 정보 조회
+            LoanDetailDTO loanDetail = loanService.getLoanDetail(loanId);
+
+            // 요청한 사용자와 대출의 소유자가 일치하는지 확인
+            if (!loanDetail.getUserSeqNo().equals(userSeqNo)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            return ResponseEntity.ok(loanDetail);
+
+        } catch (RuntimeException e) {
+            log.error("대출 상세 조회 오류: {}", e.getMessage());
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
 } 
